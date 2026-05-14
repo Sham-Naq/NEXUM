@@ -1,3 +1,5 @@
+import base64
+import json
 import os
 from pathlib import Path
 
@@ -213,6 +215,8 @@ EMAIL_HOST_PASSWORD  = _email_host_password.replace(' ', '')
 DEFAULT_FROM_EMAIL   = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
 # ── Firebase Admin SDK ────────────────────────────────────────────────────────
+_creds_json = os.getenv('FIREBASE_CREDENTIALS_JSON', '').strip()
+_creds_b64 = os.getenv('FIREBASE_CREDENTIALS_B64', '').strip()
 _creds_path = os.getenv('FIREBASE_CREDENTIALS_PATH', '').strip()
 _resolved_creds_path = (
     os.path.join(BASE_DIR, _creds_path)
@@ -223,17 +227,28 @@ _resolved_creds_path = (
 try:
     firebase_admin.get_app()
 except ValueError:
-    if not _resolved_creds_path:
-        raise RuntimeError(
-            'Missing FIREBASE_CREDENTIALS_PATH. Set it in backend/.env to your service account JSON.'
-        )
+    if _creds_json:
+        cred_dict = json.loads(_creds_json)
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+    elif _creds_b64:
+        decoded = base64.b64decode(_creds_b64).decode('utf-8')
+        cred_dict = json.loads(decoded)
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+    else:
+        if not _resolved_creds_path:
+            raise RuntimeError(
+                'Missing Firebase credentials. Set FIREBASE_CREDENTIALS_JSON, FIREBASE_CREDENTIALS_B64, '
+                'or FIREBASE_CREDENTIALS_PATH in the environment.'
+            )
 
-    if not os.path.exists(_resolved_creds_path):
-        raise RuntimeError(
-            f'FIREBASE_CREDENTIALS_PATH does not exist: {_resolved_creds_path}'
-        )
+        if not os.path.exists(_resolved_creds_path):
+            raise RuntimeError(
+                f'FIREBASE_CREDENTIALS_PATH does not exist: {_resolved_creds_path}'
+            )
 
-    cred = credentials.Certificate(_resolved_creds_path)
-    firebase_admin.initialize_app(cred)
+        cred = credentials.Certificate(_resolved_creds_path)
+        firebase_admin.initialize_app(cred)
 
 FIREBASE_WEB_API_KEY = os.getenv('FIREBASE_WEB_API_KEY', '')
