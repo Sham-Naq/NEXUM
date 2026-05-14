@@ -10,5 +10,5 @@
 // export default config;
 
 export default {
-  BACKEND_URL: 'http://192.168.0.134:8000',
+  BACKEND_URL: 'https://nexum-production-5b8c.up.railway.app',
 };
