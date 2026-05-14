@@ -1,5 +1,3 @@
-import base64
-import json
 import os
 from pathlib import Path
 
@@ -215,40 +213,36 @@ EMAIL_HOST_PASSWORD  = _email_host_password.replace(' ', '')
 DEFAULT_FROM_EMAIL   = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
 # ── Firebase Admin SDK ────────────────────────────────────────────────────────
-_creds_json = os.getenv('FIREBASE_CREDENTIALS_JSON', '').strip()
-_creds_b64 = os.getenv('FIREBASE_CREDENTIALS_B64', '').strip()
-_creds_path = os.getenv('FIREBASE_CREDENTIALS_PATH', '').strip()
-_resolved_creds_path = (
-    os.path.join(BASE_DIR, _creds_path)
-    if _creds_path and not os.path.isabs(_creds_path)
-    else _creds_path
-)
+_firebase_creds = {
+    'type': 'service_account',
+    'project_id': os.getenv('FIREBASE_PROJECT_ID', '').strip(),
+    'private_key_id': os.getenv('FIREBASE_PRIVATE_KEY_ID', '').strip(),
+    'private_key': os.getenv('FIREBASE_PRIVATE_KEY', '').replace('\\n', '\n').strip(),
+    'client_email': os.getenv('FIREBASE_CLIENT_EMAIL', '').strip(),
+    'client_id': os.getenv('FIREBASE_CLIENT_ID', '').strip(),
+    'auth_uri': os.getenv('FIREBASE_AUTH_URI', '').strip(),
+    'token_uri': os.getenv('FIREBASE_TOKEN_URI', '').strip(),
+    'auth_provider_x509_cert_url': os.getenv('FIREBASE_AUTH_PROVIDER_X509_CERT_URL', '').strip(),
+    'client_x509_cert_url': os.getenv('FIREBASE_CLIENT_X509_CERT_URL', '').strip(),
+    'universe_domain': os.getenv('FIREBASE_UNIVERSE_DOMAIN', '').strip(),
+}
 
 try:
     firebase_admin.get_app()
 except ValueError:
-    if _creds_json:
-        cred_dict = json.loads(_creds_json)
-        cred = credentials.Certificate(cred_dict)
-        firebase_admin.initialize_app(cred)
-    elif _creds_b64:
-        decoded = base64.b64decode(_creds_b64).decode('utf-8')
-        cred_dict = json.loads(decoded)
-        cred = credentials.Certificate(cred_dict)
-        firebase_admin.initialize_app(cred)
-    else:
-        if not _resolved_creds_path:
-            raise RuntimeError(
-                'Missing Firebase credentials. Set FIREBASE_CREDENTIALS_JSON, FIREBASE_CREDENTIALS_B64, '
-                'or FIREBASE_CREDENTIALS_PATH in the environment.'
-            )
+    missing = [
+        key
+        for key, value in _firebase_creds.items()
+        if key not in {'type', 'universe_domain'} and not value
+    ]
 
-        if not os.path.exists(_resolved_creds_path):
-            raise RuntimeError(
-                f'FIREBASE_CREDENTIALS_PATH does not exist: {_resolved_creds_path}'
-            )
+    if missing:
+        raise RuntimeError(
+            'Missing Firebase service account env vars: '
+            + ', '.join(sorted(missing))
+        )
 
-        cred = credentials.Certificate(_resolved_creds_path)
-        firebase_admin.initialize_app(cred)
+    cred = credentials.Certificate(_firebase_creds)
+    firebase_admin.initialize_app(cred)
 
 FIREBASE_WEB_API_KEY = os.getenv('FIREBASE_WEB_API_KEY', '')
