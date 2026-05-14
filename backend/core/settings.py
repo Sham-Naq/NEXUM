@@ -34,7 +34,7 @@ DEBUG      = _env_to_bool(os.getenv('DJANGO_DEBUG'), default=True)
 
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,192.168.110.200','yourapp.onrender.com').split(',')
+    for host in os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,192.168.110.200').split(',')
     if host.strip()
 ]
 
@@ -213,19 +213,27 @@ EMAIL_HOST_PASSWORD  = _email_host_password.replace(' ', '')
 DEFAULT_FROM_EMAIL   = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
 # ── Firebase Admin SDK ────────────────────────────────────────────────────────
-_creds_path        = os.getenv('FIREBASE_CREDENTIALS_PATH', '')
-_default_creds_file = os.path.join(BASE_DIR, 'firebase-adminsdk.json')
+_creds_path = os.getenv('FIREBASE_CREDENTIALS_PATH', '').strip()
+_resolved_creds_path = (
+    os.path.join(BASE_DIR, _creds_path)
+    if _creds_path and not os.path.isabs(_creds_path)
+    else _creds_path
+)
 
 try:
     firebase_admin.get_app()
 except ValueError:
-    if _creds_path and os.path.exists(_creds_path):
-        cred = credentials.Certificate(_creds_path)
-        firebase_admin.initialize_app(cred)
-    elif os.path.exists(_default_creds_file):
-        cred = credentials.Certificate(_default_creds_file)
-        firebase_admin.initialize_app(cred)
-    else:
-        firebase_admin.initialize_app()
+    if not _resolved_creds_path:
+        raise RuntimeError(
+            'Missing FIREBASE_CREDENTIALS_PATH. Set it in backend/.env to your service account JSON.'
+        )
+
+    if not os.path.exists(_resolved_creds_path):
+        raise RuntimeError(
+            f'FIREBASE_CREDENTIALS_PATH does not exist: {_resolved_creds_path}'
+        )
+
+    cred = credentials.Certificate(_resolved_creds_path)
+    firebase_admin.initialize_app(cred)
 
 FIREBASE_WEB_API_KEY = os.getenv('FIREBASE_WEB_API_KEY', '')
