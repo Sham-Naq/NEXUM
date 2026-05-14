@@ -215,16 +215,22 @@ DEFAULT_FROM_EMAIL   = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 # ── Firebase Admin SDK ────────────────────────────────────────────────────────
 _firebase_creds = {
     'type': 'service_account',
-    'project_id': os.getenv('FIREBASE_PROJECT_ID', '').strip(),
-    'private_key_id': os.getenv('FIREBASE_PRIVATE_KEY_ID', '').strip(),
-    'private_key': os.getenv('FIREBASE_PRIVATE_KEY', '').replace('\\n', '\n').strip(),
-    'client_email': os.getenv('FIREBASE_CLIENT_EMAIL', '').strip(),
-    'client_id': os.getenv('FIREBASE_CLIENT_ID', '').strip(),
-    'auth_uri': os.getenv('FIREBASE_AUTH_URI', '').strip(),
-    'token_uri': os.getenv('FIREBASE_TOKEN_URI', '').strip(),
-    'auth_provider_x509_cert_url': os.getenv('FIREBASE_AUTH_PROVIDER_X509_CERT_URL', '').strip(),
-    'client_x509_cert_url': os.getenv('FIREBASE_CLIENT_X509_CERT_URL', '').strip(),
-    'universe_domain': os.getenv('FIREBASE_UNIVERSE_DOMAIN', '').strip(),
+    'project_id': os.getenv('FIREBASE_PROJECT_ID', os.getenv('project_id', '')).strip(),
+    'private_key_id': os.getenv('FIREBASE_PRIVATE_KEY_ID', os.getenv('private_key_id', '')).strip(),
+    'private_key': os.getenv('FIREBASE_PRIVATE_KEY', os.getenv('private_key', '')).replace('\\n', '\n').strip(),
+    'client_email': os.getenv('FIREBASE_CLIENT_EMAIL', os.getenv('client_email', '')).strip(),
+    'client_id': os.getenv('FIREBASE_CLIENT_ID', os.getenv('client_id', '')).strip(),
+    'auth_uri': os.getenv('FIREBASE_AUTH_URI', os.getenv('auth_uri', '')).strip(),
+    'token_uri': os.getenv('FIREBASE_TOKEN_URI', os.getenv('token_uri', '')).strip(),
+    'auth_provider_x509_cert_url': os.getenv(
+        'FIREBASE_AUTH_PROVIDER_X509_CERT_URL',
+        os.getenv('auth_provider_x509_cert_url', ''),
+    ).strip(),
+    'client_x509_cert_url': os.getenv(
+        'FIREBASE_CLIENT_X509_CERT_URL',
+        os.getenv('client_x509_cert_url', ''),
+    ).strip(),
+    'universe_domain': os.getenv('FIREBASE_UNIVERSE_DOMAIN', os.getenv('universe_domain', '')).strip(),
 }
 
 try:
